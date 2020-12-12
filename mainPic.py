@@ -25,13 +25,13 @@ class mainWidget(QWidget):
         self.pic=QPixmap()
         self.initUI()
     def initUI(self):
-        self.resize(600,400)
+        self.setMinimumSize(800,600)
         self.setWindowTitle("素材提取")
 
         self.picLabel=myLabel(self)
         self.picLabel.setText("显示导入图片")
 
-        self.picLabel.setFixedSize(550,350)
+        self.picLabel.setMinimumSize(775,530)
 
         self.btnLoad=QPushButton(self)
         self.btnLoad.setText("导入图片")
@@ -54,9 +54,15 @@ class mainWidget(QWidget):
         imgName, imgType = QFileDialog.getOpenFileName(self, "打开图片", "")
         if imgName == "":
             return 0
-        self.pic = QtGui.QPixmap(imgName).scaled(self.picLabel.width(), self.picLabel.height())
+
+        originImg=cv2.imread(imgName)
+        self.picLabel.setFixedSize(originImg.shape[1]/2,originImg.shape[0]/2)
+        self.pic = QtGui.QPixmap(imgName).scaled(self.picLabel.width(),self.picLabel.height())
+
         self.picLabel.setPixmap(self.pic)
+
         self.picLabel.setCursor(Qt.CrossCursor)
+
 
     def grab_cut(self,r):#r是rect
         src=formatcvt.qtpixmap_to_cvimg(self.picLabel.pixmap())
