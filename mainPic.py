@@ -16,7 +16,7 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QRect, Qt
 from PyQt5.QtGui import QPixmap, QPainter, QPen, QImage
 from PyQt5.QtWidgets import (QWidget, QLCDNumber, QSlider,
-    QVBoxLayout, QApplication,QLabel,QPushButton,QFileDialog)
+                             QVBoxLayout, QApplication, QLabel, QPushButton, QFileDialog, QHBoxLayout)
 
 #attr: picLabel btnLoad
 class mainWidget(QWidget):
@@ -35,15 +35,26 @@ class mainWidget(QWidget):
 
         self.btnLoad=QPushButton(self)
         self.btnLoad.setText("导入图片")
-        self.btnLoad.clicked.connect(self.loadPic)
+
+
+        self.btnSave=QPushButton(self)
+        self.btnSave.setText("截取另存为")
 
         self.picLabel.setStyleSheet("QLabel{background:white;}"
                                  "QLabel{color:rgb(300,300,300,120);font-size:25px;font-weight;font-family:宋体;}"
                                  )
 
+        #信号槽
+        self.btnLoad.clicked.connect(self.loadPic)
+        self.btnSave.clicked.connect(self.savePic)
+
+        #布局
         vbox=QVBoxLayout()
+        hbox=QHBoxLayout()
+        hbox.addWidget(self.btnLoad)
+        hbox.addWidget(self.btnSave)
         vbox.addWidget(self.picLabel)
-        vbox.addWidget(self.btnLoad)
+        vbox.addLayout(hbox)
         self.setLayout(vbox)
         self.show()
 
@@ -63,7 +74,24 @@ class mainWidget(QWidget):
 
         self.picLabel.setCursor(Qt.CrossCursor)
 
+        #保存截取图片
+    def savePic(self):
+        label = self.picLabel
+        if (~label.flag):
+            result=self.grab_cut((label.x0, label.y0, abs(label.x1 - label.x0), abs(label.y1 - label.y0)))
+            cv2.imshow('result',result)
+            cv2.waitKey(0)
+            filename=QFileDialog.getSaveFileName(self,"保存文件",".","Image Files(*.png *.jpg)",)
+            cv2.imwrite(filename[0], result)  # 注意保存的路径不能有中文
+            print(filename[0])
+            cv2.imwrite('result/result6.png', result)
+            print("保存成功")
+        else:
+            return 0
 
+
+
+    #返回截取后的png，cv格式
     def grab_cut(self,r):#r是rect
         src=formatcvt.qtpixmap_to_cvimg(self.picLabel.pixmap())
         roi = src[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
@@ -96,16 +124,15 @@ class mainWidget(QWidget):
         result_BGAR = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
         # result[np.all(result==[0,0,0,255],axis=2)]=[0,0,0,0]
         result_BGAR[np.all(result_BGAR == [0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
-        #cv2.imshow(result)
-        cv2.imwrite('result/test4_re.png', result_BGAR)
-        print("保存成功")
+        return result_BGAR
 
-    def keyPressEvent(self, event):
-        label=self.picLabel
-        if(~label.flag):
-            self.grab_cut((label.x0, label.y0, abs(label.x1 - label.x0), abs(label.y1 - label.y0)))
-        else:
-            return 0
+
+    # def keyPressEvent(self, event):
+    #     label=self.picLabel
+    #     if(~label.flag):
+    #         self.grab_cut((label.x0, label.y0, abs(label.x1 - label.x0), abs(label.y1 - label.y0)))
+    #     else:
+    #         return 0
 
 
 
