@@ -84,6 +84,9 @@ class mainWidget(QWidget):
             cv2.imshow('result',result)
             cv2.waitKey(0)
             filename=QFileDialog.getSaveFileName(self,"保存文件",".","Image Files(*.png *.jpg)",)
+            if(len(filename[0])==0):
+                return
+
             cv2.imwrite(filename[0], result)  # 注意保存的路径不能有中文
             print(filename[0])
             # cv2.imwrite('result/result6.png', result)
