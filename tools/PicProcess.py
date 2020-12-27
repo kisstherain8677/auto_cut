@@ -1,15 +1,16 @@
 import cv2
 import numpy as np
-from tools.FormatCvt import FormatCvt
+from PyQt5.QtGui import QImage
+
 #接收图像进行操作
-class PicProcess:
+class Grab_cut:
 
     def __init__(self,pixmap):
         self.pixmap=pixmap
 
 
-    def grab_cut(self,r):#r是rect
-        src=FormatCvt.qtpixmap_to_cvimg(self.pixmap)
+    def image_matting(self,r):#r是rect
+        src= self.qtpixmap_to_cvimg(self.pixmap)
         roi = src[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
         # 原图mask，与原图等大小
         mask = np.zeros(src.shape[:2], dtype=np.uint8)
@@ -41,4 +42,31 @@ class PicProcess:
         # result[np.all(result==[0,0,0,255],axis=2)]=[0,0,0,0]
         result_BGAR[np.all(result_BGAR == [0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
         return result_BGAR
+
+    @staticmethod
+    def resultSave(save_path, image_np):
+        cv2.imwrite(save_path, image_np)
+
+    @staticmethod
+    def qtpixmap_to_cvimg(qtpixmap):
+        qimg = qtpixmap.toImage()
+        temp_shape = (qimg.height(), qimg.bytesPerLine() * 8 // qimg.depth())
+        temp_shape += (4,)
+        ptr = qimg.bits()
+        ptr.setsize(qimg.byteCount())
+        result = np.array(ptr, dtype=np.uint8).reshape(temp_shape)
+        result = result[..., :3]
+
+        return result
+
+    @staticmethod
+    def cvimg_to_qtimg(cvimg):
+        height, width, depth = cvimg.shape
+        cvimg = cv2.cvtColor(cvimg, cv2.COLOR_BGR2RGB)
+        cvimg = QImage(cvimg.data, width, height, width * depth, QImage.Format_RGB888)
+        return cvimg
+
+
+
+
 
