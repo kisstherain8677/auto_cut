@@ -168,9 +168,9 @@ class MainWindow(QMainWindow, WindowMixin):
         save = action('保存', self.saveFile, 'Crl+S', '保存输出结果图')
         create = action('指定区域', self.createShape,
                         'w', '框选ROI')
-        mark=action('标记微调',self.markDown,None,'左键白色，标记前景；右键黑色，标记后景')
-        matting = action('获取前景', self.grabcutMatting,
-                         'e', '获取前景')
+        mark=action('标记微调',self.markDown,None,'左键白色，标记前景吧；右键黑色，标记后景')
+        matting = action('迭代一次', self.grabcutMatting,
+                         'e', '用当前标记迭代一次获取前景算法')
         #字典，对应一个放缩比
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
@@ -362,7 +362,9 @@ class MainWindow(QMainWindow, WindowMixin):
         def format_shape(s):
             return dict(line_color=s.line_color.getRgb(),
                         fill_color=s.fill_color.getRgb(),
-                        points=[(p.x(), p.y()) for p in s.points])
+                        points=[(p.x(), p.y()) for p in s.points],
+                        backMark=self.canvas.getBackMark(),
+                        whiteMark=self.canvas.getForMark())
         #有四个点（矩形的话）+填充线颜色和边缘线颜色
         shape = format_shape(self.canvas.shapes[-1])
         self.image_out_np = self.mattingFile.image_matting(self.filePath,

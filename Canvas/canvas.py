@@ -20,7 +20,7 @@ class Canvas(QWidget):
     shapeMoved = pyqtSignal()
     drawingPolygon = pyqtSignal(bool)
 
-    WAIT,CREATE, EDIT = list(range(3))
+    WAIT, CREATE, EDIT = list(range(3))
 
     epsilon = 11.0
 
@@ -53,12 +53,19 @@ class Canvas(QWidget):
         self.setFocusPolicy(Qt.WheelFocus)
         self.verified = False
 
-        self.whiteLine = []
-        self.blackLine=[]
+        self._whiteLine = []
+        self._blackLine = []
 
         self.markmode = False
-        self.markingWhite=False#是否开始标记（鼠标按下）
-        self.markingBlack=False
+        self.markingWhite = False  # 是否开始标记（鼠标按下）
+        self.markingBlack = False
+
+    # 返回标记后景点集合<QPointf>
+    def getBackMark(self):
+        return self._blackLine
+
+    def getForMark(self):
+        return self._whiteLine
 
     def setDrawingColor(self, qColor):
         self.drawingLineColor = qColor
@@ -93,7 +100,7 @@ class Canvas(QWidget):
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
         pos = self.transformPos(ev.pos())  # 当前坐标
-        #self.markmode=True
+        # self.markmode=True
         # Polygon drawing.
         if self.drawing():
             self.overrideCursor(CURSOR_DRAW)
@@ -121,13 +128,12 @@ class Canvas(QWidget):
         # 画笔
         if self.editing():
             if self.markingWhite:
-                self.whiteLine.append(QPointF(pos.x(), pos.y()))
+                self._whiteLine.append(QPointF(pos.x(), pos.y()))
                 self.update()
 
             elif self.markingBlack:
-                self.blackLine.append(QPointF(pos.x(), pos.y()))
+                self._blackLine.append(QPointF(pos.x(), pos.y()))
                 self.update()
-
 
     def mousePressEvent(self, ev):
         pos = self.transformPos(ev.pos())
@@ -136,13 +142,13 @@ class Canvas(QWidget):
             if self.drawing():
                 self.handleDrawing(pos)
             elif self.editing():
-                self.markingWhite=True
-                self.whiteLine.append(pos)
+                self.markingWhite = True
+                self._whiteLine.append(pos)
 
-        if ev.button()==Qt.RightButton:
+        if ev.button() == Qt.RightButton:
             if self.editing():
-                self.markingBlack=True
-                self.blackLine.append(pos)
+                self.markingBlack = True
+                self._blackLine.append(pos)
 
     def mouseReleaseEvent(self, ev):
         if ev.button() == Qt.LeftButton:
@@ -150,11 +156,11 @@ class Canvas(QWidget):
             if self.drawing():
                 self.handleDrawing(pos)
             elif self.editing():
-                self.markingWhite=False
+                self.markingWhite = False
 
-        elif ev.button()==Qt.RightButton:
+        elif ev.button() == Qt.RightButton:
             if self.editing():
-                self.markingBlack=False
+                self.markingBlack = False
 
     def handleDrawing(self, pos):
         if self.current and self.current.reachMaxPoints() is False:
@@ -254,17 +260,17 @@ class Canvas(QWidget):
                        self.pixmap.width(), self.prevPoint.y())
 
         # 绘制markLine中的点
-        if self.editing() and len(self.whiteLine) != 0:
+        if self.editing() and len(self._whiteLine) != 0:
             p.setPen(QColor(255, 255, 255))
-            p.setBrush(QColor(255,255,255))
-            for point in self.whiteLine:
-                p.drawEllipse(point,1.5, 1.5)
+            p.setBrush(QColor(255, 255, 255))
+            for point in self._whiteLine:
+                p.drawEllipse(point, 1.5, 1.5)
 
-        if self.editing() and len(self.blackLine) != 0:
+        if self.editing() and len(self._blackLine) != 0:
             p.setPen(QColor(0, 0, 0))
-            p.setBrush(QColor(0,0,0))
-            for point in self.blackLine:
-                p.drawEllipse(point,1.5, 1.5)
+            p.setBrush(QColor(0, 0, 0))
+            for point in self._blackLine:
+                p.drawEllipse(point, 1.5, 1.5)
 
         p.end()
 
