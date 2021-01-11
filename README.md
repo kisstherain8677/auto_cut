@@ -1,5 +1,6 @@
 # auto_cut
-自动抠图，可选取感兴趣区域，一键扣取前景，可通过标记前景/后景进行迭代微调
+自动抠图，可选取感兴趣区域，一键扣取前景，可通过标记前景/后景进行迭代微调  
+基于https://github.com/zihuaweng/Interactive-image-segmentation-opencv-qt 修改  
 使用方法：  
 1、运行app.py  
 2、导入图片  
