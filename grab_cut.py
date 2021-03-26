@@ -42,8 +42,8 @@ class Grab_cut(object):
                 y = backpoint[1]
                 cv2.circle(self.mask, (x, y), 1, 0, -1)
             for whitepoint in whitemark:
-                x = backpoint[0]
-                y = backpoint[1]
+                x = whitepoint[0]
+                y = whitepoint[1]
                 cv2.circle(self.mask, (x, y), 1, 1,-1)
             cv2.grabCut(src_img, self.mask, rect, bgdModel, fgdModel,
                         1, cv2.GC_INIT_WITH_MASK)

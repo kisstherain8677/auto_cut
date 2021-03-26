@@ -12,6 +12,7 @@ from Canvas.canvas import Canvas
 import cv2
 
 from grab_cut import Grab_cut
+from generateDia import GenerateDia
 from zoomWidget import ZoomWidget
 
 __appname__ = 'grab_cut'
@@ -55,7 +56,7 @@ def newAction(parent, text, slot=None, shortcut=None,
     if icon is not None:
         a.setIcon(QIcon(icon))
     if shortcut is not None:
-        a.setShortcut(shortcut) 
+        a.setShortcut(shortcut)
     if tip is not None:
         a.setToolTip(tip)
         a.setStatusTip(tip)
@@ -106,16 +107,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
         matResultShow.setLayout(listLayout)
 
-
         # 建一个dockwidget放图片label
-        self.resultdock = QDockWidget('输出结果', self)
+        self.resultdock = QDockWidget('分割结果', self)
         self.resultdock.setObjectName('result')
 
         self.resultdock.setWidget(matResultShow)
         self.resultdock.resize(150, 150)
-        #self.resultdock.setFeatures(QDockWidget.DockWidgetFloatable)
-
-
+        # self.resultdock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         # 建一个fileDoc放文件
         self.fileListWidget = QListWidget()  # 列表布局
@@ -143,12 +141,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.scrollArea = scroll
         self.canvas.scrollRequest.connect(self.scrollRequest)
 
-
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.resultdock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
-        #self.filedock.setFeatures(QDockWidget.DockWidgetFloatable)
-
+        # self.filedock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         self.dockFeatures = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
         self.resultdock.setFeatures(
@@ -160,7 +156,7 @@ class MainWindow(QMainWindow, WindowMixin):
         open_file = action('导入图片', self.openFile, 'Ctrl+O', '导入图片')
         open_dir = action('导入文件夹', self.openDir,
                           'Ctrl+D', '导入文件夹中的所有图片到列表')
-        change_save_dir = action('&更改保存路径', self.changeSavedirDialog)
+        change_save_dir = action('&更改预设的保存路径', self.changeSavedirDialog)
         # open_next_img = action('&Next Image', self.openNextImg,
         #                        'Ctrl+N', 'Open next image')
         # open_pre_img = action('&Previous Image', self.openPreImg,
@@ -168,10 +164,13 @@ class MainWindow(QMainWindow, WindowMixin):
         save = action('保存', self.saveFile, 'Crl+S', '保存输出结果图')
         create = action('指定区域', self.createShape,
                         'w', '框选ROI')
-        mark=action('标记微调',self.markDown,None,'左键白色，标记前景吧；右键黑色，标记后景')
+        mark = action('标记微调', self.markDown, None, '左键白色，标记前景；右键黑色，标记后景')
         matting = action('迭代一次', self.grabcutMatting,
                          'e', '用当前标记迭代一次获取前景算法')
-        #字典，对应一个放缩比
+
+        # 用预训练网络生成图片
+        generate = action('生成图片', self.generate, None, '输入文字，生成图片素材')
+        # 字典，对应一个放缩比
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
             self.FIT_WIDTH: self.scaleFitWidth,
@@ -183,7 +182,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions = struct(save=save, open_file=open_file,
                               open_dir=open_dir, change_save_dir=change_save_dir,
                               # open_next_img=open_next_img, open_pre_img=open_pre_img,
-                              create=create, mark=mark,matting=matting)
+                              create=create, mark=mark, matting=matting, generate=generate)
 
         # Auto saving: enable auto saving if pressing next
         # self.autoSaving = QAction('Auto Saving', self)
@@ -195,7 +194,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.all = (save, open_file, open_dir,
                             change_save_dir, create,
                             # open_pre_img, open_next_img,
-                            mark,matting)
+                            mark, matting, generate)
         addActions(self.tools, self.actions.all)
 
         # set status
@@ -343,15 +342,38 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.setEditing(False)
         self.actions.create.setEnabled(False)
 
-    #开始标记,mod换成editting
+    # 开始标记,mod换成editting
     def markDown(self):
         self.canvas.setEditing(True)
-
 
     def toggleDrawMode(self, edit=True):
         self.canvas.setEditing(edit)
         self.actions.createMode.setEnabled(edit)
         self.actions.editMode.setEnabled(not edit)
+
+    # 生成图片
+    def generate(self):
+        # 用命令行执行GAN操作
+        type = 'none'  # flower/bird/actor
+        dia = GenerateDia()
+        lines=[]
+        with open("custom.txt", "r") as f:
+            for line in f.readlines():
+                line = line.strip('\n')  # 去掉列表中每一个元素的换行符
+                lines.append(line)
+        with open("AttnGAN/data/birds/custom_captions.txt","w") as f:
+            f.write(lines[1])  # 覆盖原文件
+        if lines[0] == 'bird':
+            type = 'bird'
+        elif lines[0] == 'flower':
+            return
+        elif lines[0] == 'actor':
+            return
+        else:
+            return
+
+        path = 'AttnGAN/code'
+        os.system('python ' + path + '/main.py --cfg ' + path + '/cfg/eval_' + type + '.yml --gpu 0')
 
     # 提取前景操作
     def grabcutMatting(self):
@@ -365,14 +387,15 @@ class MainWindow(QMainWindow, WindowMixin):
                         points=[(p.x(), p.y()) for p in s.points],
                         backMark=self.canvas.getBackMark(),
                         whiteMark=self.canvas.getForMark())
-        #有四个点（矩形的话）+填充线颜色和边缘线颜色
+
+        # 有四个点（矩形的话）+填充线颜色和边缘线颜色
         shape = format_shape(self.canvas.shapes[-1])
         self.image_out_np = self.mattingFile.image_matting(self.filePath,
                                                            shape, iteration=10)
         self.showResultImg(self.image_out_np)
         self.actions.save.setEnabled(True)
 
-    #接收opencv矩阵格式
+    # 接收opencv矩阵格式
     def showResultImg(self, image_np):
         # resize to pic
         # factor = min(self.pic.width() /
