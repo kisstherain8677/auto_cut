@@ -12,9 +12,9 @@
 7、效果满意后点击保存，选择保存路径保存提取结果  
 
 **新增功能** 使用attnGAN根据描述生成图片，目前仅支持鸟类图片
-使用方法：
-1、按照https://github.com/taoxugit/AttnGAN 下载数据集到AttnGAN项目中的指定文件夹中
-2、点击**生成图片**按钮
-3、选择类别为bird
-4、输入描述鸟类特征的句子，示例：this bird is red with white and has a very short beak
-5、等待图片生成
+使用方法：  
+1、按照https://github.com/taoxugit/AttnGAN 下载数据集到AttnGAN项目中的指定文件夹中  
+2、点击**生成图片**按钮  
+3、选择类别为bird  
+4、输入描述鸟类特征的句子，示例：this bird is red with white and has a very short beak  
+5、等待图片生成  
